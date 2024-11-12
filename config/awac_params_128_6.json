@@ -1,0 +1,92 @@
+{
+  "observation_shape": [
+    32
+  ],
+  "action_size": 7,
+  "config": {
+    "type": "awac",
+    "params": {
+      "batch_size": 512,
+      "gamma": 0.8935451482093664,
+      "observation_scaler": {
+        "type": "none",
+        "params": {}
+      },
+      "action_scaler": {
+        "type": "none",
+        "params": {}
+      },
+      "reward_scaler": {
+        "type": "standard",
+        "params": {
+          "mean": -0.1555896386270549,
+          "std": 0.7922325129406829,
+          "eps": 0.001,
+          "multiplier": 1.0
+        }
+      },
+      "final_activation_function": "sigmoid",
+      "actor_learning_rate": 0.000984403600011654,
+      "critic_learning_rate": 0.0007627343523050131,
+      "actor_optim_factory": {
+        "type": "adam",
+        "params": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0,
+          "amsgrad": false
+        }
+      },
+      "critic_optim_factory": {
+        "type": "adam",
+        "params": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0,
+          "amsgrad": false
+        }
+      },
+      "actor_encoder_factory": {
+        "type": "vector",
+        "params": {
+          "hidden_units": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "activation": "relu",
+          "use_batch_norm": false,
+          "dropout_rate": 0.1,
+          "use_dense": true
+        }
+      },
+      "critic_encoder_factory": {
+        "type": "default",
+        "params": {
+          "activation": "relu",
+          "use_batch_norm": false,
+          "dropout_rate": null
+        }
+      },
+      "q_func_factory": {
+        "type": "mean",
+        "params": {
+          "share_encoder": false
+        }
+      },
+      "tau": 0.008948457074979644,
+      "lam": 0.95,
+      "n_action_samples": 1,
+      "n_critics": 2
+    }
+  }
+}
