@@ -18,15 +18,6 @@ pip3 uninstall d3rlpy
 ```
 before installing the fork from github.
 
-### Setup with MatLAB
-Then run the following to get the path of the conda python installation (in active conda env)
-```
-which python
-```
-Copy the path and set in in app_EMGHero.m for variable *condaPythonPath*.
-
-Next, update the path to the EMGHero python package.
-
 ### Setup SifiLabs BioArmband
 To install libemg with Sifi BioArmband run
 ```
