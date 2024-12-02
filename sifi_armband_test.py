@@ -1,22 +1,24 @@
-# from libemg.gui import GUI
-# from libemg.data_handler import OnlineDataHandler
-# from libemg import streamers
-# from libemg.feature_extractor import FeatureExtractor
-# from libemg.emg_predictor import OnlineEMGClassifier, EMGClassifier
+from libemg.gui import GUI
+from libemg.data_handler import OnlineDataHandler
+from libemg import streamers
+from libemg.feature_extractor import FeatureExtractor
+from libemg.emg_predictor import OnlineEMGClassifier, EMGClassifier
 import time
-# from libemg.filtering import Filter
-# from libemg.utils import get_windows
+from libemg.filtering import Filter
+from libemg.utils import get_windows
 import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Create data handler and streamer 
-    # streamer, smm = streamers.sifi_bioarmband_streamer(emg_notch_freq=60,
-    #                                          #bridge_version="1.1.3",
-    #                                          name="BioArmband",
-    #                                          ecg=False, emg=True, eda=False, imu=True, ppg=False)
-    # odh = OnlineDataHandler(smm)
-    # fe = FeatureExtractor()
+    streamer, smm = streamers.sifi_bioarmband_streamer(emg_notch_freq=60,
+                                             #bridge_version="1.1.3",
+                                             name="BioArmband",
+                                             ecg=False, emg=True, eda=False, imu=False, ppg=False)
+    odh = OnlineDataHandler(smm)
+    # odh.analyze_hardware()
+    time.sleep(10)
+    fe = FeatureExtractor()
     mavs = np.empty((8,0))
     sscs = np.empty((8,0))
     zcs = np.empty((8,0))
@@ -24,22 +26,26 @@ if __name__ == "__main__":
     i = 0
     max_iter = 100
     while(i < max_iter):
-        # time.sleep(0.05)
-        # data, count = odh.get_data(N=300)
-        # emg = data['emg']
+        time.sleep(0.05)
+        data, count = odh.get_data(N=300) #INCREASE SAMPLE SIZE
+        emg = data['emg']
+
+        #NEED TO STORE THE DATA SOMEWHERE AND PLOT IT OUT ON MATLAB
+
         # print("data: ", emg)
-        # print("data type: ", type(emg))
-        # print("data shape: ", np.shape(emg))
-        # windows = get_windows(emg,300,75)
+        print("data type: ", type(emg))
+        print("data shape: ", np.shape(emg))
+        
+        windows = get_windows(emg,300,75)
         # print('windows: ', windows)
         # print("windows type: ", type(windows))
         # print("windows shape: ", np.shape(windows))
-        # features = fe.extract_features(feature_list = ['MAV', 'SSC', 'ZC', 'WL'],
-        #                                 windows = windows)
+        features = fe.extract_features(feature_list = ['MAV', 'SSC', 'ZC', 'WL'],
+                                        windows = windows)
 
         # print(np.shape(features['MAV'].T))
         # print(np.shape(features['MAV']))
-        features = {'MAV': np.random.rand(1, 8), 'SSC': np.random.rand(1, 8), 'ZC': np.random.rand(1, 8) ,'WL': np.random.rand(1, 8)}
+        # features = {'MAV': np.random.rand(1, 8), 'SSC': np.random.rand(1, 8), 'ZC': np.random.rand(1, 8) ,'WL': np.random.rand(1, 8)}
         mavs = np.hstack((mavs,features['MAV'].T))
         sscs = np.hstack((sscs,features['SSC'].T))
         zcs = np.hstack((zcs,features['ZC'].T))

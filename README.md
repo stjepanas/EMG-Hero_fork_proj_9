@@ -1,3 +1,7 @@
+#Internal Testing
+```
+python3 gym_env.py --no_emg --experiment_folder logs/test1
+```
 # EMGHero
 A Guitar Hero inspire game, which can be played using EMG instead of buttons. The classifier can be retrained on the game data after playing using Offline Reinforcement Learning.
 
