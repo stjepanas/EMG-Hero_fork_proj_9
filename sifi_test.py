@@ -5,7 +5,7 @@ from libemg import streamers
 if __name__ == "__main__":
     # Create data handler and streamer 
     streamer, smm = streamers.sifi_bioarmband_streamer(emg_notch_freq=60,
-                                             bridge_version="1.1.3",
+                                             #bridge_version="1.1.3",
                                              name="BioArmband",
                                              ecg=False, emg=True, eda=False, imu=True, ppg=False)
     odh = OnlineDataHandler(smm)
