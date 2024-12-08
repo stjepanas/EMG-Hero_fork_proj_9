@@ -11,6 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from libemg.data_handler import OfflineDataHandler, RegexFilter
 from d3rlpy.dataset import MDPDataset
+from scipy.io import loadmat
+from d3rlpy.constants import ActionSpace
 
 # how do we get the other images to the GUI so that we can get the data???
 
@@ -32,8 +34,8 @@ if __name__ == "__main__":
     RegexFilter(left_bound = "C_", right_bound="_R", values = gestures, description='classes'),
     RegexFilter(left_bound = "R_", right_bound="_emg.csv", values = reps, description='reps'),
 ]
-    WINDOW_SIZE = 300 # todo: 200 ms window
-    WINDOW_INCREMENT = 75 # todo calculate increment 50 ms
+    WINDOW_SIZE = 300 # TODO 200 ms window
+    WINDOW_INCREMENT = 75 # TODO calculate increment 50 ms
 
     offline_dh = OfflineDataHandler()
     offline_dh.get_data(folder_location = dataset_folder, regex_filters=regex_filters, delimiter=",")
@@ -41,66 +43,64 @@ if __name__ == "__main__":
     train_data = offline_dh.isolate_data("reps", [0])
     test_data = offline_dh.isolate_data("reps", [1])
 
-    train_windows, train_meta = train_data.parse_windows(WINDOW_SIZE, WINDOW_INCREMENT)
-    test_windows, test_meta = test_data.parse_windows(WINDOW_SIZE, WINDOW_INCREMENT)
-    print(test_meta)
-
-    print(train_windows)
+    train_windows, train_meta = train_data.parse_windows(WINDOW_SIZE, WINDOW_INCREMENT)#(488x8x300)
+    test_windows, test_meta = test_data.parse_windows(WINDOW_SIZE, WINDOW_INCREMENT) 
+    # this is the same length as the amount of windows, we can just take
+    # the integer from the meta data for every step in the loop and one hot encode it
 
     fe = FeatureExtractor()
     feature_list = ['MAV', 'SSC', 'ZC', 'WL']
     training_features = fe.extract_features(feature_list, train_windows)
-    # print(np.shape(training_features['MAV']))
+    testing_features = fe.extract_features(feature_list, test_windows)
+    # print(np.shape(training_features['MAV'])) # This returns 488x8 array, so 1x8 array for every
+    # window. Loop through the nr of windows and append
+    # the training features for every feature
     
     nr_windows = np.shape(train_windows)[0]
-    print(nr_windows)
-    nr_channels = np.shape(train_windows)[-1]
-    observations = np.zeros((nr_windows, len(feature_list)*nr_channels))
-    # 1000 steps of actions with shape of (4,)
-    actions = np.zeros((nr_windows, len(gestures)+1))
-    # 1000 steps of rewards
+    nr_channels = np.shape(train_windows)[1]
+    
+    observations_train = np.zeros((nr_windows, len(feature_list)*nr_channels)) # so a 488X(4*8)
+    observations_test = np.zeros((nr_windows, len(feature_list)*nr_channels)) 
+
+    actions_train = np.zeros((nr_windows, len(gestures)+1))
+    actions_test = np.zeros((nr_windows, len(gestures)+1))
+
     rewards = np.zeros(nr_windows)
-    # 1000 steps of terminal flags
-    terminals = np.zeros((2, 488))
-
+    terminals = np.zeros((nr_windows))
     
+    # took this from datasets, DO NOT KNOW what this means
+    pretrain_terminals = np.array([1 if ((i+1) % 47 == 0 and i > 0) else 0 \
+                                         for i in range(actions_train.shape[0])]) # why 47???
+
     for i in range(nr_windows):
-        feature_vector = []
+    # Extract features for the current window
+        feature_train_vector = []
+        feature_test_vector = []
         for feature in feature_list:
-        # Collect features for the current window across all channels
-            feature_vector.extend(training_features[feature][i])
-            observations[i] = feature_vector  # Save feature vector to observations array
+            # Concatenate features from all channels
+            feature_train_vector.extend(training_features[feature][i])
+            feature_test_vector.extend(testing_features[feature][i])
 
-    # Example: Populate actions with dummy data (assumes class info is in train_meta)
-        gesture_class = train_meta[i]["class"]  # Assuming train_meta has a 'class' field
-        actions[i, int(gesture_class)] = 1  # One-hot encode the gesture class
+        observations_train[i] = feature_train_vector
+        observations_test[i] = feature_test_vector
+
+        gesture_train_class = train_meta['classes'][i] 
+        actions_train[i, int(gesture_train_class)] = 1  # One-hot encode the action based on class label,
+        
+        gesture_test_class = test_meta['classes'][i] 
+        actions_test[i, int(gesture_test_class)] = 1 
+                                        
 
 
-    
-    #print(np.shape(test_windows))
-    #print(train_windows[0,:,:]) # need to extract the features for every window, 489 windows with 300 samples
-    # the observations are the features and actions the intended movements
-    dataset = MDPDataset(observations, actions, rewards, terminals)
-    print(dataset)
-    # 1000 steps of observations with shape of (100,)
- 
+    dataset_pretrain = MDPDataset(observations_train,actions_train,rewards,terminals,timeouts = pretrain_terminals,action_space = ActionSpace.CONTINUOUS)
+    dataset_pretest = MDPDataset(observations_test,actions_test,rewards,terminals,timeouts = pretrain_terminals,action_space = ActionSpace.CONTINUOUS)
 
 ###############################################################################################
-    # Extract windows
-    #train_windows, train_meta = train_data.parse_windows(WINDOW_SIZE, WINDOW_INCREMENT)
-    #test_windows, test_meta = test_data.parse_windows(WINDOW_SIZE, WINDOW_INCREMENT)
-    
-    # don't know if we need the parse_windows thing?
-    # train_windows, train_metadata = train_odh.parse_windows(WINDOW_SIZE,WINDOW_INCREMENT)
-
-    # Extract features
-    #fe = FeatureExtractor()
-    #feature_list = ['MAV', 'SSC', 'ZC', 'WL']
-    #training_features = fe.extract_features(feature_list, train_windows)
-
+#mat_data = loadmat('afeRec_2023-04-21 15-03.mat', squeeze_me = True)
+    #print(mat_data) 
     # this then probably not needed??
     # Step 4: Create the EMG Classifier
-    #o_classifier = EMGClassifier("LDA") # there is an MLP classifier
+    #o_classifier = EMGClassifier("MLP") # there is an MLP classifier
     #o_classifier.fit(feature_dictionary=data_set)
 
     # Online classification
@@ -109,5 +109,4 @@ if __name__ == "__main__":
     #fe = FeatureExtractor()
     #offline_classifier = 0
    
-
     #classififer_thing = OnlineEMGClassifier(offline_classifier, window_size, window_increment, online_data_handler, features, file_path='.', file=False, smm=False, smm_items=None, port=12346, ip='127.0.0.1', std_out=False, tcp=False, output_format='predictions')
