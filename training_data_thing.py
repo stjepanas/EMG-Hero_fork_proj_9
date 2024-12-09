@@ -14,16 +14,14 @@ from d3rlpy.dataset import MDPDataset
 from scipy.io import loadmat
 from d3rlpy.constants import ActionSpace
 
-# how do we get the other images to the GUI so that we can get the data???
-
 if __name__ == "__main__":
     streamer, smm = streamers.sifi_bioarmband_streamer(emg_notch_freq=50,
                                                 #bridge_version="1.1.3",
                                                 name="BioArmband",
                                                 ecg=False, emg=True, eda=False, imu=False, ppg=False)
-    #ondh = OnlineDataHandler(smm)
+    #online_dh = OnlineDataHandler(smm)
 
-    #training_ui = GUI(ondh, width=700, height=700, gesture_height=300, gesture_width=300)
+    #training_ui = GUI(online_dh, width=700, height=700, gesture_height=300, gesture_width=300)
     #training_ui.download_gestures([1,2,3,4,5], "\images")
     #training_ui.start_gui()
 
@@ -86,12 +84,12 @@ if __name__ == "__main__":
 
         gesture_train_class = train_meta['classes'][i] 
         actions_train[i, int(gesture_train_class)] = 1  # One-hot encode the action based on class label,
-        
+
         gesture_test_class = test_meta['classes'][i] 
         actions_test[i, int(gesture_test_class)] = 1 
                                         
 
-
+    # Commenting out cause annoying to run but it works
     dataset_pretrain = MDPDataset(observations_train,actions_train,rewards,terminals,timeouts = pretrain_terminals,action_space = ActionSpace.CONTINUOUS)
     dataset_pretest = MDPDataset(observations_test,actions_test,rewards,terminals,timeouts = pretrain_terminals,action_space = ActionSpace.CONTINUOUS)
 
