@@ -63,8 +63,11 @@ class EMGHeroEnv(gym.Env):
         self.action_space = spaces.Discrete(12)
 
         # Gym initialize observation space
-        # 4 EMG features [MAW, WL, ZC, SSC]
-        self.observation_space = spaces.Discrete(4)
+        # 4 EMG features [MAW, WL, ZC, SSC] with 8 channels hence 32 
+        self.observation_space = spaces.Discrete(32)
+
+        self.observation = [0,0,0,0,0,0,1]
+        self.info = {}
 
         
 
@@ -151,8 +154,10 @@ class EMGHeroEnv(gym.Env):
                 if self.PLAY_WITH_EMG:
                     #if time.time() - self.last_data_extract > 0.05:
                     self.pressed_keys, one_hot_preds, features, new_features, self.too_high_values = self.model_handle.get_emg_keys()
-                    print("onehots: ", type(one_hot_preds))
-                    print("time at get_emg_keys: ", time.time() - self.last_data_extract)
+                    self.observation = features
+                    # print("features: ", features)
+                    print("onehots: ", one_hot_preds)
+                    # print("time at get_emg_keys: ", time.time() - self.last_data_extract)
                     self.last_data_extract = time.time()
                     # else:
                     #     new_features = False
@@ -203,9 +208,9 @@ class EMGHeroEnv(gym.Env):
         return self.observation, self.reward, self.terminated, self.truncated, self.info
     
     def reset(self, seed = None, options = None):
+        # We need the following line to seed self.np_random
         super().reset(seed=seed)
-        self.observation = [1,2,3,4,5,6]
-        return self.observation
+        return self.observation, self.info
 
     def render(self):
         if not self.EXIT:

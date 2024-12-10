@@ -191,7 +191,7 @@ if __name__ == '__main__':
                 play_with_emg = PLAY_WITH_EMG,
                 n_round = N_ROUND)
 
-    observation= env.reset()
+    observation,_= env.reset()
 
     episode_over = False
     while not episode_over:
