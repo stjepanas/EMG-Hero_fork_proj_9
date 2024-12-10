@@ -14,10 +14,8 @@ if __name__ == "__main__":
     streamer, smm = streamers.sifi_bioarmband_streamer(emg_notch_freq=60,
                                              #bridge_version="1.1.3",
                                              name="BioArmband",
-                                             ecg=False, emg=True, eda=False, imu=False, ppg=False)
+                                             ecg=False, emg=True, eda=False, imu=True, ppg=False)
     odh = OnlineDataHandler(smm)
-    # odh.analyze_hardware()
-    time.sleep(10)
     fe = FeatureExtractor()
     mavs = np.empty((8,0))
     sscs = np.empty((8,0))
@@ -25,17 +23,13 @@ if __name__ == "__main__":
     wls = np.empty((8,0))
     i = 0
     max_iter = 100
-    while(i < max_iter):
-        time.sleep(0.05)
-        data, count = odh.get_data(N=300) #INCREASE SAMPLE SIZE
+    for iteration in range(max_iter):
+        time.sleep(1)
+        data, count = odh.get_data(N=300)
         emg = data['emg']
-
-        #NEED TO STORE THE DATA SOMEWHERE AND PLOT IT OUT ON MATLAB
-
         # print("data: ", emg)
-        print("data type: ", type(emg))
-        print("data shape: ", np.shape(emg))
-        
+        # print("data type: ", type(emg))
+        # print("data shape: ", np.shape(emg))
         windows = get_windows(emg,300,75)
         # print('windows: ', windows)
         # print("windows type: ", type(windows))
@@ -43,25 +37,28 @@ if __name__ == "__main__":
         features = fe.extract_features(feature_list = ['MAV', 'SSC', 'ZC', 'WL'],
                                         windows = windows)
 
-        # print(np.shape(features['MAV'].T))
-        # print(np.shape(features['MAV']))
-        # features = {'MAV': np.random.rand(1, 8), 'SSC': np.random.rand(1, 8), 'ZC': np.random.rand(1, 8) ,'WL': np.random.rand(1, 8)}
-        mavs = np.hstack((mavs,features['MAV'].T))
-        sscs = np.hstack((sscs,features['SSC'].T))
-        zcs = np.hstack((zcs,features['ZC'].T))
-        wls = np.hstack((wls,features['WL'].T))
-        i +=1
+        print(features['MAV'])
+        print(np.shape(features['MAV'].T))
+        print(np.shape(features['MAV']))
+        # features = {'MAV': np.random.rand(1, 8), 
+        #             'SSC': np.random.rand(1, 8), 
+        #             'ZC': np.random.rand(1, 8) ,
+        #             'WL': np.random.rand(1, 8)}
+        # mavs = np.hstack((mavs,features['MAV'].T))
+        # sscs = np.hstack((sscs,features['SSC'].T))
+        # zcs = np.hstack((zcs,features['ZC'].T))
+        # wls = np.hstack((wls,features['WL'].T))
 
     # Create a 2x2 grid of subplots
-    time_points = np.linspace(0, 60, max_iter)
+    # time_points = np.linspace(0, 60, max_iter)
 
-    fig,axs = plt.subplots(2,2)
-    axs[0, 0].plot(time_points, mavs.T)
-    axs[0, 0].set_title('MAV')
-    axs[0, 1].plot(time_points, sscs.T)
-    axs[0, 1].set_title('SSC')
-    axs[1, 0].plot(time_points, zcs.T)
-    axs[1, 0].set_title('ZC')
-    axs[1, 1].plot(time_points, wls.T)
-    axs[1, 1].set_title('WLS')
-    plt.show()
+    # fig,axs = plt.subplots(2,2)
+    # axs[0, 0].plot(time_points, mavs.T)
+    # axs[0, 0].set_title('MAV')
+    # axs[0, 1].plot(time_points, sscs.T)
+    # axs[0, 1].set_title('SSC')
+    # axs[1, 0].plot(time_points, zcs.T)
+    # axs[1, 0].set_title('ZC')
+    # axs[1, 1].plot(time_points, wls.T)
+    # axs[1, 1].set_title('WLS')
+    # plt.show()

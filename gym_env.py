@@ -35,6 +35,7 @@ class EMGHeroEnv(gym.Env):
         self.model_handle = model_handle
         self.PLAY_WITH_EMG = play_with_emg
         self.N_ROUND = n_round
+        self.last_data_extract = time.time()
 
         self.base_config = BaseConfig()
         self.config = self.base_config.game
@@ -59,7 +60,7 @@ class EMGHeroEnv(gym.Env):
 
         # Gym initialize action space
         # 7 float values that will be passed through a sigmoid and threshold 
-        self.action_space = spaces.Discrete(7)
+        self.action_space = spaces.Discrete(12)
 
         # Gym initialize observation space
         # 4 EMG features [MAW, WL, ZC, SSC]
@@ -148,7 +149,14 @@ class EMGHeroEnv(gym.Env):
 
                 # get pressed keys
                 if self.PLAY_WITH_EMG:
+                    #if time.time() - self.last_data_extract > 0.05:
                     self.pressed_keys, one_hot_preds, features, new_features, self.too_high_values = self.model_handle.get_emg_keys()
+                    print("onehots: ", type(one_hot_preds))
+                    print("time at get_emg_keys: ", time.time() - self.last_data_extract)
+                    self.last_data_extract = time.time()
+                    # else:
+                    #     new_features = False
+                    #     self.too_high_values
                 else:
                     new_features = True
                     self.too_high_values = False
