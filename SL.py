@@ -19,15 +19,18 @@ import gymnasium as gym
 
 if __name__ == "__main__":
 
-    #streamer, smm = streamers.sifi_bioarmband_streamer(emg_notch_freq=50,
-                                                #bridge_version="1.1.3",
-                                                #name="BioArmband",
-                                                #ecg=False, emg=True, eda=False, imu=False, ppg=False)
-    #online_dh = OnlineDataHandler(smm)
+    # streamer, smm = streamers.sifi_bioarmband_streamer(
+    #                                         filtering= True,
+    #                                         emg_bandpass=[20,500],  # since lowpass = 20 and highpass = 500
+    #                                         emg_notch_freq=50,      # notch filter at 50hz
+    #                                          #bridge_version="1.1.3",
+    #                                          name="BioArmband",
+    #                                          ecg=False, emg=True, eda=False, imu=False, ppg=False)
+    
+    # online_dh = OnlineDataHandler(smm)
 
-    #training_ui = GUI(online_dh, width=700, height=700, gesture_height=300, gesture_width=300)
-    #training_ui.download_gestures([1,2,3,4,5,6,7,8,9,10,11,12,13], r'images\\', download_imgs=False)
-    #training_ui.start_gui()
+    # training_ui = GUI(online_dh, width=700, height=700, gesture_height=300, gesture_width=300)
+    # training_ui.start_gui()
 
     dataset_folder = 'data'
     gestures = ["0","1","2","3","4","5","6","7","8","9","10","11","12"]
@@ -57,8 +60,8 @@ if __name__ == "__main__":
     print(np.shape(training_features['MAV'])) 
     print(np.shape(testing_features['MAV'])) 
     
-    nr_windows = np.shape(test_windows)[0]
-    nr_channels = np.shape(test_windows)[1]
+    nr_windows = np.shape(train_windows)[0]
+    nr_channels = np.shape(train_windows)[1]
     
     observations_train = np.zeros((nr_windows, len(feature_list)*nr_channels)) # so a 488X(4*8)
     observations_test = np.zeros((nr_windows, len(feature_list)*nr_channels)) 
@@ -96,6 +99,8 @@ if __name__ == "__main__":
         observations_test[i] = feature_test_vector
 
         gesture_train_class = train_meta['classes'][i] 
+        print("model_output_number: ", gesture_train_class)
+        print("resulting one hot: ", get_action_vector(gesture_train_class))
         actions_train[i] = get_action_vector(gesture_train_class)
 
         gesture_test_class = test_meta['classes'][i] 
@@ -125,11 +130,15 @@ if __name__ == "__main__":
     # is it the pretrain or pretest dataset here????
     #rewards = env_evaluator(bc, dataset=dataset_pretrain)
     # Offline training
-    bc.fit(
+    list = bc.fit(
     dataset_pretrain,
-    n_steps=100000,
-    n_steps_per_epoch=10000
-) 
+    n_steps=1000,
+    n_steps_per_epoch=1000,
+    ) 
+
+
+    print("list[0]: ", list[0])
+    print("list[0][0]", list[0][0])
 
 # TODO
 # add README

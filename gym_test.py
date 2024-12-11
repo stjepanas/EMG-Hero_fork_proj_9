@@ -150,13 +150,15 @@ if __name__ == '__main__':
                                 action_size = move_config.n_actions)
     
     # Libemg streamer for the bio armband
-    streamer, smm = streamers.sifi_bioarmband_streamer(emg_notch_freq=60,
-                                                #bridge_version="1.1.3",
-                                                name="BioArmband",
-                                                ecg=False, emg=True, eda=False, imu=True, ppg=False)
+    streamer, smm = streamers.sifi_bioarmband_streamer(
+                                            filtering= True,
+                                            emg_bandpass=[20,500],  # since lowpass = 20 and highpass = 500
+                                            emg_notch_freq=50,      # notch filter at 50hz
+                                             #bridge_version="1.1.3",
+                                             name="BioArmband",
+                                             ecg=False, emg=True, eda=False, imu=False, ppg=False)
     
     odh = OnlineDataHandler(smm)
-    print("TYPE: ", type(odh))
     fe = FeatureExtractor()
 
 
