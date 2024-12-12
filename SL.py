@@ -9,28 +9,30 @@ from d3rlpy.dataset import MDPDataset
 from d3rlpy.constants import ActionSpace
 from d3rlpy.algos import BCConfig
 from gym_problem import action_mapping
-from d3rlpy.metrics import TDErrorEvaluator
-from d3rlpy.metrics import EnvironmentEvaluator
 from gym_env import EMGHeroEnv
 from get_action_vector import get_action_vector
 from emg_hero.model_utility import pretrain_emg_hero_model
 import argparse
 import gymnasium as gym
+from emg_hero.metrics import F1MacroEvaluator
+from emg_hero.bc_modified import pretrain_emg_hero_model_modified
+from emg_hero.model_utility import get_newest_directory
+import os
+import re
+from d3rlpy import load_learnable
+from d3rlpy.logging import FileAdapterFactory
 
 if __name__ == "__main__":
 
-    # streamer, smm = streamers.sifi_bioarmband_streamer(
-    #                                         filtering= True,
-    #                                         emg_bandpass=[20,500],  # since lowpass = 20 and highpass = 500
-    #                                         emg_notch_freq=50,      # notch filter at 50hz
-    #                                          #bridge_version="1.1.3",
-    #                                          name="BioArmband",
-    #                                          ecg=False, emg=True, eda=False, imu=False, ppg=False)
-    
-    # online_dh = OnlineDataHandler(smm)
+    #streamer, smm = streamers.sifi_bioarmband_streamer(emg_notch_freq=50,
+                                                #bridge_version="1.1.3",
+                                                #name="BioArmband",
+                                                #ecg=False, emg=True, eda=False, imu=False, ppg=False)
+    #online_dh = OnlineDataHandler(smm)
 
-    # training_ui = GUI(online_dh, width=700, height=700, gesture_height=300, gesture_width=300)
-    # training_ui.start_gui()
+    #training_ui = GUI(online_dh, width=700, height=700, gesture_height=300, gesture_width=300)
+    #training_ui.download_gestures([1,2,3,4,5,6,7,8,9,10,11,12,13], r'images\\', download_imgs=False)
+    #training_ui.start_gui()
 
     dataset_folder = 'data'
     gestures = ["0","1","2","3","4","5","6","7","8","9","10","11","12"]
@@ -47,11 +49,13 @@ if __name__ == "__main__":
 
 # if we have multiple reps, it stacks the same movements together, so rep 1 of the first move, rep 2 of the first
 # move and so on
-    train_data = offline_dh.isolate_data("reps", [0]) # should we have only one of these?
+    train_data = offline_dh.isolate_data("reps", [0]) 
     test_data = offline_dh.isolate_data("reps", [1])
 
     train_windows, train_meta = train_data.parse_windows(WINDOW_SIZE, WINDOW_INCREMENT)#(488x8x300)
     test_windows, test_meta = test_data.parse_windows(WINDOW_SIZE, WINDOW_INCREMENT) 
+    print('train_windows:', train_windows[-1])
+    print('test_windows:', test_windows[-1])
 
     fe = FeatureExtractor()
     feature_list = ['MAV', 'SSC', 'ZC', 'WL']
@@ -60,8 +64,8 @@ if __name__ == "__main__":
     print(np.shape(training_features['MAV'])) 
     print(np.shape(testing_features['MAV'])) 
     
-    nr_windows = np.shape(train_windows)[0]
-    nr_channels = np.shape(train_windows)[1]
+    nr_windows = np.shape(test_windows)[0]
+    nr_channels = np.shape(test_windows)[1]
     
     observations_train = np.zeros((nr_windows, len(feature_list)*nr_channels)) # so a 488X(4*8)
     observations_test = np.zeros((nr_windows, len(feature_list)*nr_channels)) 
@@ -99,46 +103,91 @@ if __name__ == "__main__":
         observations_test[i] = feature_test_vector
 
         gesture_train_class = train_meta['classes'][i] 
-        print("model_output_number: ", gesture_train_class)
-        print("resulting one hot: ", get_action_vector(gesture_train_class))
         actions_train[i] = get_action_vector(gesture_train_class)
 
         gesture_test_class = test_meta['classes'][i] 
         actions_test[i] = get_action_vector(gesture_test_class)
 
     #print('get_action vector:',get_action_vector(1))
-    print(np.shape(observations_train))
-                                         
+    #print(np.shape(observations_train))
+    print('observations_train:', observations_train[0])   
+    print('obsrrvation_size:', np.shape(observations_train[0]))                           
     dataset_pretrain = MDPDataset(observations_train,actions_train,rewards,terminals,pretrain_timeouts,action_space = ActionSpace.CONTINUOUS)
-    
     dataset_pretest = MDPDataset(observations_test,actions_test,rewards,terminals,pretrain_timeouts,action_space = ActionSpace.CONTINUOUS)
-
+    dataset_pretrain.dump('dataset_pretrain.h5')
 ################ Behaviour cloning ################################################################
-    bc = BCConfig().create(device=False) 
-   # initialize neural networks with the given observation shape and action size.
-   # this is not necessary when you directly call fit or fit_online method.
-    bc.build_with_dataset(dataset_pretrain)
-    # calculate metrics with training dataset
+    #bc = BCConfig().create(device=False) 
+    #bc.build_with_dataset(dataset_pretrain)
 
-
-    #td_error_evaluator = TDErrorEvaluator()
-    # set environment in scorer function
-    #env = gym.make('Blackjack-v1')
-
-    #env_evaluator = EnvironmentEvaluator(env)
-    # evaluate algorithm on the environment
-    # is it the pretrain or pretest dataset here????
-    #rewards = env_evaluator(bc, dataset=dataset_pretrain)
+    #f1_macro_evaluator = F1MacroEvaluator(dataset_pretest.episodes)
     # Offline training
-    list = bc.fit(
-    dataset_pretrain,
-    n_steps=1000,
-    n_steps_per_epoch=1000,
-    ) 
+    #bc.fit(
+    #dataset_pretrain,
+    #n_steps=10000,
+    #n_steps_per_epoch=10000,
+    #evaluators={"f1_macro": f1_macro_evaluator}
+    #)
 
+    #supervised_train = dataset_pretrain
+    #supervised_test = dataset_pretest
 
-    print("list[0]: ", list[0])
-    print("list[0][0]", list[0][0])
+    #bc = BCConfig().create(device="cpu")#.from_json(bc_config_file)
+    #bc.build_with_dataset(supervised_train)
+
+    #n_samples = np.sum([e.observations.shape[0] for e in supervised_train.episodes])
+    #LOGGER.info("Train dataset size: %i", n_samples)
+
+    #f1_macro_evaluator = F1MacroEvaluator(supervised_test.episodes)
+
+#    bc_hist = bc_model.fit(
+#    supervised_train,
+#    n_steps=10000,
+#    n_steps_per_epoch=50,
+#    evaluators={
+#        "f1_macro": f1_macro_evaluator,
+#    }
+#)
+
+    #observation = observations_train
+    #action = bc.predict([observation])
+    #print()
+    #print(action)
+
+'''
+    f1s_array = [h[1]["f1_macro"] for h in bc_hist]
+
+    newest_dir_path = get_newest_directory('\EMG-Hero_fork_proj_9\d3rlpy_logs')
+    
+
+    model_files = []
+    for _, _, files in os.walk(newest_dir_path):
+        for file in files:
+            if file.endswith(".d3"):
+                model_files.append(file)
+
+    # sort model_files
+    numbers = [int(re.findall("[0-9]+", m_file)[0]) for m_file in model_files]
+    sorted_model_names = sorted(zip(numbers, model_files))
+
+    # pick best model
+    best_model_idx = np.argmax(f1s_array)
+    best_model_filename = sorted_model_names[best_model_idx][1]
+
+    # get path of best model
+    best_model_path = newest_dir_path / best_model_filename
+    print('The best models path is',best_model_path)
+    #LOGGER.info(
+     #   "Best model is %s with index %i and F1 score %f",
+     #   best_model_filename,
+      #  best_model_idx,
+      #  np.max(f1s_array),
+    #)
+    #LOGGER.info(best_model_path)
+    #print(f"Took model {best_model_idx}: {best_model_filename}")
+
+    bc_model = load_learnable(best_model_path)
+    '''
+    
 
 # TODO
 # add README
