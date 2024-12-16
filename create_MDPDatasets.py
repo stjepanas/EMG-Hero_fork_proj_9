@@ -34,7 +34,7 @@ def get_training_dataset(gestures: list, feature_list: list, size_windows_train,
 
         gesture_train_class = train_meta['classes'][i] 
         action = mapping[gesture_train_class] #get_action_vector(gesture_train_class)
-        actions_train[i] = action
+        actions_train[i] = action['one_hot_pred']
 
         #print('actions train:', actions_train[i], 'action meta:', train_meta['classes'][i] )
 
@@ -76,7 +76,7 @@ def get_testing_dataset(gestures:list , feature_list:list, size_windows_test, te
 
         gesture_test_class = test_meta['classes'][i] 
         action = mapping[gesture_test_class]#get_action_vector(gesture_test_class)
-        actions_test[i] = action
+        actions_test[i] = action['one_hot_pred']
         #print('actions test:', actions_test[i], 'action meta:', test_meta['classes'][i] )
 
     return observations_test,actions_test,rewards_test,terminals_test,pretest_timeouts
