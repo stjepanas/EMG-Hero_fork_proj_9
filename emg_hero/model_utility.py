@@ -24,8 +24,6 @@ from d3rlpy.metrics import TDErrorEvaluator
 from d3rlpy.constants import ActionSpace
 from scipy.io import loadmat, savemat
 
-from libemg.utils import get_windows
-
 from emg_hero.datasets import (
     load_emg_hero_dataset,
     load_histories,
@@ -627,13 +625,9 @@ class ModelHandle:
     def __init__(
         self,
         model,
-        online_data_handler,
-        feature_extractor,
         model_path: str,
         experiment_folder: str,
         play_with_emg: bool,
-        tcp_host: str,
-        tcp_port: int,
         n_actions: int,
         emg_hero_metrics: EMGHeroMetrics,
         label_transformer,
@@ -653,9 +647,6 @@ class ModelHandle:
         self.floornoise = floornoise
         self.n_features = n_features
         self.label_transformer = label_transformer
-
-        self.online_data_handler = online_data_handler
-        self.feature_extractor = feature_extractor
 
         # try connection to TCP server
         # self.tcp_client = None
@@ -684,7 +675,7 @@ class ModelHandle:
     #     msg = "set_true".encode()
     #     self.tcp_client.sendall(msg)
 
-    def get_emg_keys(self) -> tuple[dict, np.ndarray, np.ndarray, bool]:
+    def get_emg_keys(self, feat_data, mean_mav) -> tuple[dict, np.ndarray, np.ndarray, bool]:
         # """Requests newest features from MatLAB over TCP"""
         # msg = "request".encode()
         # self.tcp_client.sendall(msg)
@@ -696,26 +687,26 @@ class ModelHandle:
         # if not len(split_str_data) == 2:
         #     LOGGER.warning('Split string data len not correct')
 
-        data, count = self.online_data_handler.get_data(N=300)
-        emg = data['emg']
-        windows = get_windows(emg,300,75)
-        features = self.feature_extractor.extract_features(feature_list = ['MAV', 'SSC', 'ZC', 'WL'],
-                                        windows = windows)
+        # data, count = self.online_data_handler.get_data(N=300)
+        # emg = data['emg']
+        # windows = get_windows(emg,300,75)
+        # features = self.feature_extractor.extract_features(feature_list = ['MAV', 'SSC', 'ZC', 'WL'],
+        #                                 windows = windows)
 
-        # print("data: ", data)
+        # # print("data: ", data)
 
-        # print("Features: ", features)
+        # # print("Features: ", features)
 
-        mavs = features['MAV']
-        wls = features['WL']
-        zcs = features['ZC']
-        sscs = features['SSC']
+        # mavs = features['MAV']
+        # wls = features['WL']
+        # zcs = features['ZC']
+        # sscs = features['SSC']
 
-        # Stack the features in the correct order and flatten
-        feat_data = np.ravel(np.column_stack((mavs, wls, zcs, sscs)))
-        # print("feat_data: ", feat_data)
+        # # Stack the features in the correct order and flatten
+        # feat_data = np.ravel(np.column_stack((mavs, wls, zcs, sscs)))
+        # # print("feat_data: ", feat_data)
 
-        mean_mav = np.mean(features['MAV'])
+        # mean_mav = np.mean(features['MAV'])
         # print("mean_mav: ", mean_mav)
 
         # feat_str_data = split_str_data[0]
@@ -752,8 +743,7 @@ class ModelHandle:
         new_features = True
 
         return emg_keys, emg_one_hot_preds, feat_data, new_features, too_high_values
-        # return -1, -1, -1, -1, -1
-
+    
     def retrain_model(
         self,
         history_filenames: list[str],

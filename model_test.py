@@ -31,7 +31,18 @@ from libemg import streamers
 from libemg.feature_extractor import FeatureExtractor
 from libemg.data_handler import OnlineDataHandler
 
-if __name__ == '__main__':
+from gym_problem import get_bioarmband_data, mapping, reverse_mapping
+from libemg import streamers
+from libemg.feature_extractor import FeatureExtractor
+from libemg.data_handler import OnlineDataHandler
+from emg_hero.model_utility import ModelHandle
+import time
+import numpy as np
+from d3rlpy import load_learnable
+from emg_hero.defs import MoveConfig
+from emg_hero.metrics import EMGHeroMetrics
+
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
                 prog='EMGHero',
@@ -136,7 +147,6 @@ if __name__ == '__main__':
                     cropped_soundfile=CROPPED_SOUNDFILE,
                     config=config,
                     move_config=move_config)
-    emg_hero.reset_canvas()
 
     label_transformer = LabelTransformer(move_config=move_config)
 
@@ -175,42 +185,26 @@ if __name__ == '__main__':
                             floornoise=floornoise,
                             n_features=config.n_feats)
 
+    feat_data = np.zeros((7,),dtype=np.float32)
 
-    ################## TESTING ######################
+    interval = 0.05 #50ms
 
-    register(
-        id = 'EMGHero-v0',
-        entry_point = 'gym_env:EMGHeroEnv'
-    )
+    while(True):
+        start_time = time.time()
+        feat_data, mean_mav = get_bioarmband_data(online_data_handler = odh, feature_extractor = fe)
+        emg_keys, emg_one_hot_preds, _, new_features, too_high_values = model_handle.get_emg_keys(feat_data, mean_mav)
 
-    env = gym.make("EMGHero-v0", 
-                history_filenames = HISTORY_FILENAMES,
-                emg_hero = emg_hero,
-                model_handle = model_handle,
-                play_with_emg = PLAY_WITH_EMG,
-                n_round = N_ROUND)
+        key = emg_one_hot_preds[0].tobytes()
 
-    observation,_= env.reset()
-
-    episode_over = False
-    while not episode_over:
-        
-        if PLAY_WITH_EMG:
-            # Extract the stacked feature vector used by the model as well as the mean_mav value if applicable
-            feat_data, mean_mav = gym_problem.get_bioarmband_data(odh,fe)
-
-            emg_hero.pressed_keys, one_hot_preds, _, emg_hero.new_features, emg_hero.too_high_values = model_handle.get_emg_keys(feat_data,mean_mav)
-            emg_hero.observation = feat_data
-            action = one_hot_preds
+        if key in reverse_mapping.keys():
+            print(reverse_mapping[key],f"              {emg_one_hot_preds}")
         else:
-            action = np.zeros((7,)) #dummy value, will be ignored in step()
+            print("INVALID MOVEMENT",f"              {emg_one_hot_preds}")
 
-        observation, reward, terminated, truncated, info = env.step(action=action)
+        elapsed_time = time.time() - start_time
 
-        # if restarted reset the environment
-
-        if not terminated:
-            env.render()
-        episode_over = terminated or truncated
-
-    env.close()
+        if elapsed_time < interval:
+            time.sleep(interval - elapsed_time)
+        else:
+            # Log or handle overrun
+            print(f"Loop overrun! Took {elapsed_time:.4f}s instead of {interval:.4f}s.")

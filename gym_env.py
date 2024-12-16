@@ -1,31 +1,19 @@
-import os
 import time
 import copy
-import pickle
 import logging
-import argparse
-import datetime
-from pathlib import Path
 import numpy as np
-from d3rlpy import load_learnable
-from torch.nn import Sigmoid
 import pygame
 
-from emg_hero.model_utility import ModelHandle, build_algo
 from emg_hero.datasets import get_history_filenames
-from emg_hero.metrics import EMGHeroMetrics
 from emg_hero.label_transformer import LabelTransformer
 from emg_hero.defs import get_current_timestamp, SUPERVISED_DATA_FILENAME, MoveConfig
 from emg_hero.generate_song import generate_song
 from emg_hero.analyze_utils import create_csv
-from emg_hero.game import EMGHero
 from emg_hero.configs import BaseConfig
 
 import gymnasium as gym
 from gymnasium.envs.registration import register
 import gymnasium.spaces as spaces
-
-import gym_problem
 
 class EMGHeroEnv(gym.Env):
 
@@ -57,21 +45,33 @@ class EMGHeroEnv(gym.Env):
         self.GAME_STARTED = False
         self.SUCCESS = False
         self.current_history_filenames = copy.deepcopy(self.HISTORY_FILENAMES)
+        self.new_features = False
+        self.too_high_values = False
+        self.pressed_keys = {
+            'lines': [],
+            'directions': [],
+            }
 
         # Gym initialize action space
         # 7 float values that will be passed through a sigmoid and threshold 
-        self.action_space = spaces.Discrete(12)
+        self.action_space = spaces.Box(low=0, high=1, shape=(7,), dtype=np.float64)
 
         # Gym initialize observation space
-        # 4 EMG features [MAW, WL, ZC, SSC] with 8 channels hence 32 
-        self.observation_space = spaces.Discrete(32)
+        # 4 EMG features [MAW, WL, ZC, SSC] with 8 channels, hence 32 elements
+        self.observation_space = spaces.Box(low=-2**61, high=2**61-2, shape=(32,), dtype=np.float64)
 
-        self.observation = [0,0,0,0,0,0,1]
+        self.observation = np.zeros((32,))
         self.info = {}
 
         
 
-    def step(self, predicted_action):
+    def step(self, action):
+
+        """ Performs a single update step for the game
+
+        Args:
+            action (np.array(int)): one hot prediction array from model (7,1)
+        """
         self.clock.tick(self.config.fps)
 
         if self.GAME_RESTART:
@@ -152,18 +152,11 @@ class EMGHeroEnv(gym.Env):
 
                 # get pressed keys
                 if self.PLAY_WITH_EMG:
-                    #if time.time() - self.last_data_extract > 0.05:
-                    self.pressed_keys, one_hot_preds, features, new_features, self.too_high_values = self.model_handle.get_emg_keys()
-                    self.observation = features
-                    # print("features: ", features)
+                    one_hot_preds = action
                     print("onehots: ", one_hot_preds)
-                    # print("time at get_emg_keys: ", time.time() - self.last_data_extract)
                     self.last_data_extract = time.time()
-                    # else:
-                    #     new_features = False
-                    #     self.too_high_values
                 else:
-                    new_features = True
+                    self.new_features = True
                     self.too_high_values = False
                     features = np.NaN
                     keys = pygame.key.get_pressed()
@@ -184,7 +177,7 @@ class EMGHeroEnv(gym.Env):
                 if self.emg_hero.use_right_arm:
                     self.pressed_keys['lines'] = [((self.move_config.n_dof-1) - old_line) for old_line in self.pressed_keys['lines']]
 
-                if new_features:
+                if self.new_features:
                 # check if pressed keys hit note
                     self.SUCCESS, new_score = self.emg_hero.check_note_hit(self.pressed_keys)
                     self.emg_hero.append_history(self.GAME_TIME, new_score, one_hot_preds, self.pressed_keys, features)
@@ -203,13 +196,17 @@ class EMGHeroEnv(gym.Env):
         
         
         self.terminated = self.EXIT
-        self.observation, self.reward, self.truncated, self.info = [0,0,0,0,0,0],0,0,{}
+
+        self.reward = self.emg_hero.score 
+
+        self.truncated, self.info = False,{}
 
         return self.observation, self.reward, self.terminated, self.truncated, self.info
     
     def reset(self, seed = None, options = None):
-        # We need the following line to seed self.np_random
         super().reset(seed=seed)
+
+        self.observation = np.zeros((32,),dtype=np.float64)
         return self.observation, self.info
 
     def render(self):

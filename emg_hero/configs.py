@@ -96,7 +96,7 @@ class GameConfig(BaseModel):
 
 # TODO combine with PolicyConfig
 class AlgoConfig(BaseModel):
-    type: str = 'awac' # 'bc' 'awac' 'td3bc' 'td3' 'dt'
+    type: str = 'bc' # 'bc' 'awac' 'td3bc' 'td3' 'dt'
 
     only_use_last_history: bool = False
     n_histories_replay_buffer: Optional[int] = None # how many histories to include in replay buffer
