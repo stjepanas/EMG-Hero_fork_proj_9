@@ -742,7 +742,7 @@ class ModelHandle:
 
         new_features = True
 
-        return emg_keys, emg_one_hot_preds, feat_data, new_features, too_high_values
+        return [emg_keys, emg_one_hot_preds, feat_data, new_features, too_high_values]
     
     def retrain_model(
         self,

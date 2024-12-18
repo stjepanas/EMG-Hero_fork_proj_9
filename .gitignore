@@ -1,2 +1,6 @@
 __pycache__/
 .DS_Store
+d3rlpy_logs/
+data/
+simon_data/
+simon_data2/

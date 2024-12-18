@@ -17,7 +17,7 @@ import gymnasium.spaces as spaces
 
 class EMGHeroEnv(gym.Env):
 
-    def __init__(self, history_filenames, emg_hero, model_handle, play_with_emg, n_round):
+    def __init__(self, history_filenames, emg_hero, model_handle, play_with_emg, n_round, experiment_folder):
         self.HISTORY_FILENAMES = history_filenames
         self.emg_hero = emg_hero  
         self.model_handle = model_handle
@@ -34,6 +34,10 @@ class EMGHeroEnv(gym.Env):
         self.EXIT = False
         self.GAME_DONE = False
         self.GAME_RESTART = False
+
+        self.EXPERIMENT_FOLDER = experiment_folder
+        self.SUPERVISED_PATH = self.EXPERIMENT_FOLDER / SUPERVISED_DATA_FILENAME
+        
 
         self.label_transformer = LabelTransformer(move_config=self.move_config)
 
@@ -73,6 +77,14 @@ class EMGHeroEnv(gym.Env):
             action (np.array(int)): one hot prediction array from model (7,1)
         """
         self.clock.tick(self.config.fps)
+
+        self.pressed_keys = action[0]
+        one_hot_preds = action[1]
+        features = action[2]
+        self.new_features = action[3]
+        self.too_high_values = action[4]
+
+        print("pressed keys env:", self.pressed_keys)
 
         if self.GAME_RESTART:
             # ask if retraining
@@ -131,6 +143,7 @@ class EMGHeroEnv(gym.Env):
                     HIST_FILENAME = self.emg_hero.save_history()
                     self.current_history_filenames.append(HIST_FILENAME)
                     self.GAME_RESTART = True
+                    RESTARTING = True
                 if event.unicode == 'm' or event.unicode == 'M':
                     self.emg_hero.use_right_arm = not self.emg_hero.use_right_arm
                 if event.unicode == 'h' or event.unicode == 'H':
@@ -153,7 +166,6 @@ class EMGHeroEnv(gym.Env):
                 # get pressed keys
                 if self.PLAY_WITH_EMG:
                     one_hot_preds = action
-                    print("onehots: ", one_hot_preds)
                     self.last_data_extract = time.time()
                 else:
                     self.new_features = True

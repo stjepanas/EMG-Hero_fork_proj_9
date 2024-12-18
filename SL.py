@@ -60,7 +60,7 @@ if __name__ == "__main__":
     size_windows_test = np.shape(test_windows)[0]
 
     fe = FeatureExtractor()
-    feature_list = ['MAV', 'SSC', 'ZC', 'WL']
+    feature_list = ['MAV', 'WL', 'ZC', 'SSC']
     # extracts the necessary features, returns a dictionary where keys are the features
     # this is done for each window, so each window gets a dictionary of features
     training_features = fe.extract_features(feature_list, train_windows)

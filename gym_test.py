@@ -94,18 +94,19 @@ if __name__ == '__main__':
         N_ROUND = len(HISTORY_FILENAMES)
 
 
-    if args.model is not None:
-        MODEL_PATH = SCRIPT_DIR / args.model
-        if args.matlab:
-            logging.warning('matlab model is overwritten by provided model with --model')
-        model = load_learnable(MODEL_PATH)
-
     move_config = MoveConfig()
 
     model, floornoise = build_algo(pt_weights=None, pt_biases=None, base_config=base_config)
 
     MODEL_PATH = EXPERIMENT_FOLDER / 'pretrained_model.d3'
     model.save(MODEL_PATH)
+
+    if args.model is not None:
+        MODEL_PATH = SCRIPT_DIR / args.model
+        if args.matlab:
+            logging.warning('matlab model is overwritten by provided model with --model')
+            print(MODEL_PATH)
+        model = load_learnable(MODEL_PATH)
 
     assert isinstance(model.impl.policy._final_act, Sigmoid), 'Last layer of model should be Sigmoid'
 
@@ -188,22 +189,31 @@ if __name__ == '__main__':
                 emg_hero = emg_hero,
                 model_handle = model_handle,
                 play_with_emg = PLAY_WITH_EMG,
-                n_round = N_ROUND)
+                n_round = N_ROUND,
+                experiment_folder = EXPERIMENT_FOLDER)
 
     observation,_= env.reset()
 
+    interval = 0.05
     episode_over = False
     while not episode_over:
+        start_time = time.time()
         
         if PLAY_WITH_EMG:
             # Extract the stacked feature vector used by the model as well as the mean_mav value if applicable
             feat_data, mean_mav = gym_problem.get_bioarmband_data(odh,fe)
 
-            emg_hero.pressed_keys, one_hot_preds, _, emg_hero.new_features, emg_hero.too_high_values = model_handle.get_emg_keys(feat_data,mean_mav)
+            # env.pressed_keys, one_hot_preds, _, env.new_features, env.too_high_values = model_handle.get_emg_keys(feat_data,mean_mav)
+            action = model_handle.get_emg_keys(feat_data,mean_mav)
             emg_hero.observation = feat_data
-            action = one_hot_preds
+            input = action[1]
+            print("pressed keys main:", input)
+            if input.tobytes() in gym_problem.reverse_mapping.keys():
+                print("action:", gym_problem.reverse_mapping[input.tobytes()]['movement'])
+            else:
+                print("action:", input, "movement:","invalid movement")
         else:
-            action = np.zeros((7,)) #dummy value, will be ignored in step()
+            input = np.zeros((7,)) #dummy value, will be ignored in step()
 
         observation, reward, terminated, truncated, info = env.step(action=action)
 
@@ -212,5 +222,11 @@ if __name__ == '__main__':
         if not terminated:
             env.render()
         episode_over = terminated or truncated
+
+        
+        elapsed_time = time.time() - start_time
+
+        if elapsed_time < interval:
+            time.sleep(interval - elapsed_time)
 
     env.close()
