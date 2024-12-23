@@ -1,5 +1,5 @@
 import numpy as np     
-from gym_problem import reverse_mapping, mapping
+from gym_defs import reverse_mapping, mapping
 
 def get_training_dataset(gestures: list, feature_list: list, size_windows_train, training_features, train_meta):
     ''' Returns the necessary components to build the MDPDataset for training
