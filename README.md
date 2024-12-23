@@ -1,7 +1,3 @@
-#Internal Testing
-```
-python3 gym_env.py --no_emg --experiment_folder logs/test1
-```
 # EMGHero
 A Guitar Hero inspire game, which can be played using EMG instead of buttons. The classifier can be retrained on the game data after playing using Offline Reinforcement Learning.
 
@@ -76,4 +72,16 @@ GUI shows every image in the images map, so every time gata is gathered, it is g
 
 SL script also contains the behaviour cloning part where the models are being fit with the hyperparameters that were used in the previous project, as well as testing with the test dataset and plotting the success rate + the loss for every model. Every time the bc.fit is run, it creates a new map with the trained models. The get_newest_directory function from the previous project is used so that the directories don't need to be changed manually in the testing and plotting part of the SL script. This way, everything can be done in one run of the SL script.
 
+## Running the game via the gymnasium environment
+Run the EMG-Hero the same way as previously with main.py, but call gym_main.py instead. The same arguments can be used.
 
+Example script:
+```
+python3 gym_main.py --experiment_folder ./logs/TEST_FOLDER_NAME_HERE/ --model d3rlpy_logs\TRAINING_FOLDER\MODEL.d3
+```
+
+| args                 | Function                       |
+|----------------------|--------------------------------|
+| --experiment_folder  | Specifies there logs are saved |
+| --model              | OPTIONAL: Specifies model used |
+| --no_emg             | OPTIONAL: Uses keyboard inputs instead of EMG signals |
