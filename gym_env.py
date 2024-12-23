@@ -70,6 +70,7 @@ class EMGHeroEnv(gym.Env):
         
 
     def step(self, action):
+        print(self.GAME_RESTART)
 
         """ Performs a single update step for the game
 
@@ -84,7 +85,7 @@ class EMGHeroEnv(gym.Env):
         self.new_features = action[3]
         self.too_high_values = action[4]
 
-        print("pressed keys env:", self.pressed_keys)
+        # print("pressed keys env:", self.pressed_keys)
 
         if self.GAME_RESTART:
             # ask if retraining
@@ -94,6 +95,7 @@ class EMGHeroEnv(gym.Env):
                     self.EXIT = True
                 if event.type == pygame.KEYDOWN:
                     if event.unicode == 'q' or event.unicode == 'Q':
+                        print("--------------Q1-------------")
                         self.EXIT = True
                     if event.unicode == 'y' or event.unicode == 'Y':
                         # retrain model
@@ -104,6 +106,7 @@ class EMGHeroEnv(gym.Env):
                         else:
                             hists_in_buffer = self.current_history_filenames[-self.base_config.algo.n_histories_replay_buffer:]
 
+                        print("SUPERVISED PATH: ", self.SUPERVISED_PATH)
                         self.model_handle.retrain_model(hists_in_buffer,
                                                 supervised_filename = self.SUPERVISED_PATH,
                                                 experiment_folder = self.EXPERIMENT_FOLDER,
@@ -138,12 +141,18 @@ class EMGHeroEnv(gym.Env):
                     HIST_FILENAME = self.emg_hero.save_history()
                     self.current_history_filenames.append(HIST_FILENAME)
                     self.EXIT = True
+                    print("--------------Q2-------------")
                 if event.unicode == 'r' or event.unicode == 'R':
+                    print("---------------R--------------")
+                    # print(self.GAME_DONE)
+                    # print(self.GAME_RESTART)
+                    # print(self.GAME_STARTED)
+                    # print(self.GAME_TIME)
+                    # print(self.EXIT)
                     # restart game
                     HIST_FILENAME = self.emg_hero.save_history()
                     self.current_history_filenames.append(HIST_FILENAME)
                     self.GAME_RESTART = True
-                    RESTARTING = True
                 if event.unicode == 'm' or event.unicode == 'M':
                     self.emg_hero.use_right_arm = not self.emg_hero.use_right_arm
                 if event.unicode == 'h' or event.unicode == 'H':
@@ -205,13 +214,13 @@ class EMGHeroEnv(gym.Env):
                     self.GAME_DONE = True
                     logging.info('Reward sum: %f', self.emg_hero.score)
 
-        
+        self.info = {"current_history_filenames": self.current_history_filenames}
         
         self.terminated = self.EXIT
 
         self.reward = self.emg_hero.score 
 
-        self.truncated, self.info = False,{}
+        self.truncated = False
 
         return self.observation, self.reward, self.terminated, self.truncated, self.info
     
@@ -230,16 +239,16 @@ class EMGHeroEnv(gym.Env):
                 pygame.display.update()
                 time.sleep(0.05)
                 return
+            
+            if self.GAME_RESTART:
+                self.emg_hero.draw_restarting_canvas()
+                pygame.display.update()
+                time.sleep(0.05)
+                return
 
             # if game done, show results screen
             if self.GAME_DONE:
                 self.emg_hero.draw_end_canvas(self.N_ROUND)
-                pygame.display.update()
-                time.sleep(0.05)
-                return
-            
-            if self.GAME_RESTART:
-                self.emg_hero.draw_restarting_canvas()
                 pygame.display.update()
                 time.sleep(0.05)
                 return

@@ -25,7 +25,7 @@ import gymnasium as gym
 from gymnasium.envs.registration import register
 import gymnasium.spaces as spaces
 
-import gym_problem
+from gym_defs import reverse_mapping, mapping, get_bioarmband_data
 
 from libemg import streamers
 from libemg.feature_extractor import FeatureExtractor
@@ -201,17 +201,17 @@ if __name__ == '__main__':
         
         if PLAY_WITH_EMG:
             # Extract the stacked feature vector used by the model as well as the mean_mav value if applicable
-            feat_data, mean_mav = gym_problem.get_bioarmband_data(odh,fe)
+            feat_data, mean_mav = get_bioarmband_data(odh,fe)
 
             # env.pressed_keys, one_hot_preds, _, env.new_features, env.too_high_values = model_handle.get_emg_keys(feat_data,mean_mav)
             action = model_handle.get_emg_keys(feat_data,mean_mav)
             emg_hero.observation = feat_data
             input = action[1]
-            print("pressed keys main:", input)
-            if input.tobytes() in gym_problem.reverse_mapping.keys():
-                print("action:", gym_problem.reverse_mapping[input.tobytes()]['movement'])
-            else:
-                print("action:", input, "movement:","invalid movement")
+            # print("pressed keys main:", input)
+            # if input.tobytes() in reverse_mapping.keys():
+            #     print("action:", reverse_mapping[input.tobytes()]['movement'])
+            # else:
+            #     print("action:", input, "movement:","invalid movement")
         else:
             input = np.zeros((7,)) #dummy value, will be ignored in step()
 
@@ -221,6 +221,7 @@ if __name__ == '__main__':
 
         if not terminated:
             env.render()
+
         episode_over = terminated or truncated
 
         
@@ -228,5 +229,52 @@ if __name__ == '__main__':
 
         if elapsed_time < interval:
             time.sleep(interval - elapsed_time)
+
+    # -----------------------------------------
+    # Game over
+
+    print(info.keys())
+    
+    current_history_filenames = info["current_history_filenames"]
+
+    # check if game score and history score adds up
+    if np.sum(emg_hero.history['rewards']) != emg_hero.score:
+        logging.warning("History score different from game score")
+
+    logging.info('Reward sum: %f', emg_hero.score)
+
+    NOW = get_current_timestamp()
+    histories_save_path = EXPERIMENT_FOLDER / ('emg_hero_history_filenames_'+NOW+'.pkl')
+    with open(histories_save_path, 'wb') as _file:
+        pickle.dump(current_history_filenames, _file)
+        logging.info('History filenames successfully saved to %s', histories_save_path)
+
+    # calculate and save metrics
+    history_summary = {
+        'HISTORY_FILENAMES': current_history_filenames,
+        'motion_test_files': {},
+        'subject_id': None,
+        'subject_date': datetime.date.today(),
+        'subject_age': None,
+        'experiment_folder': EXPERIMENT_FOLDER,
+        'switch_lines': False,
+    }
+    df = create_csv(history_summary)
+    short_df = df[['experiment_folder', 'rewards', 'emr', 'f1', 'num_action_changes']]
+
+    results_file = EXPERIMENT_FOLDER / 'results.csv'
+    short_results_file = EXPERIMENT_FOLDER / 'short_results.csv'
+
+    # append in case exists, otherwise create new file
+    if os.path.exists(results_file):
+        df.to_csv(results_file, mode='a', index=False, header=False)
+        short_df.to_csv(short_results_file, mode='a', index=False, header=False)
+    else:
+        df.to_csv(results_file)
+        short_df.to_csv(short_results_file)
+
+    # destruct game class
+    del model_handle
+    del emg_hero
 
     env.close()

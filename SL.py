@@ -1,11 +1,6 @@
-import libemg
-from libemg.gui import GUI
-from libemg import streamers
 from libemg.feature_extractor import FeatureExtractor
 import numpy as np
 from libemg.data_handler import OfflineDataHandler, RegexFilter
-from d3rlpy.algos import BCConfig
-import argparse
 from emg_hero.metrics import F1MacroEvaluator
 from d3rlpy import load_learnable
 from create_datasets import get_training_dataset, get_testing_dataset
@@ -13,12 +8,13 @@ from d3rlpy.dataset import MDPDataset
 from d3rlpy.constants import ActionSpace  
 from emg_hero.model_utility import build_algo 
 from emg_hero.configs import BaseConfig
-from gym_problem import reverse_mapping, mapping
+from gym_defs import reverse_mapping, mapping
 import os
 import matplotlib.pyplot as plt
 import csv
 import matplotlib.pyplot as plt
 from emg_hero.model_utility import get_newest_directory
+
 if __name__ == "__main__":
 
     # streamer, smm = streamers.sifi_bioarmband_streamer(

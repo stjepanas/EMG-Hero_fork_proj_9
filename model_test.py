@@ -5,7 +5,7 @@ from emg_hero.metrics import EMGHeroMetrics
 from emg_hero.game import EMGHero
 from emg_hero.label_transformer import LabelTransformer
 import time
-from gym_problem import mapping, reverse_mapping, get_bioarmband_data
+from gym_defs import mapping, reverse_mapping, get_bioarmband_data
 from libemg.feature_extractor import FeatureExtractor
 from libemg.data_handler import OnlineDataHandler
 from libemg import streamers
@@ -66,14 +66,6 @@ if __name__ == "__main__":
     while(True):
         start_time = time.time()
         feat_data, mean_mav = get_bioarmband_data(online_data_handler = odh, feature_extractor = fe)
-        # print("channel 1:", feat_data[0:4])
-        # print("channel 2:", feat_data[4:8])
-        # print("channel 3:", feat_data[8:12])
-        # print("channel 4:", feat_data[12:16])
-        # print("channel 5:", feat_data[16:20])
-        # print("channel 6:", feat_data[20:24])
-        # print("channel 7:", feat_data[24:28])
-        # print("channel 8:", feat_data[28:32])
         emg_keys, emg_one_hot_preds, _, new_features, too_high_values = model_handle.get_emg_keys(feat_data, mean_mav)
 
         key = emg_one_hot_preds.tobytes()

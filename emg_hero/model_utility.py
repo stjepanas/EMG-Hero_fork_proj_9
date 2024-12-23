@@ -648,75 +648,13 @@ class ModelHandle:
         self.n_features = n_features
         self.label_transformer = label_transformer
 
-        # try connection to TCP server
-        # self.tcp_client = None
-        # if self.play_with_emg:
-        #     self.tcp_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #     try:
-        #         self.tcp_client.connect((tcp_host, tcp_port))
-        #     except ConnectionRefusedError:
-        #         LOGGER.error("Could not connect to TCP server, is EMGHero.m running?")
-        #     data = self.tcp_client.recv(1024)
-        #     LOGGER.info("TCP server response: %s", data.decode())
-
         self.model_filenames = [model_path]
 
         # initialize last action as 'Rest'
         self.last_action_prediction = np.zeros(n_actions)
         self.last_action_prediction[-1] = 1.0
 
-    # def stop_acqusition(self) -> None:
-    #     """Stop EMG acquisition"""
-    #     msg = "set_false".encode()
-    #     self.tcp_client.sendall(msg)
-
-    # def start_acqusition(self) -> None:
-    #     """Start EMG acquisition"""
-    #     msg = "set_true".encode()
-    #     self.tcp_client.sendall(msg)
-
     def get_emg_keys(self, feat_data, mean_mav) -> tuple[dict, np.ndarray, np.ndarray, bool]:
-        # """Requests newest features from MatLAB over TCP"""
-        # msg = "request".encode()
-        # self.tcp_client.sendall(msg)
-        # data = self.tcp_client.recv(1024)
-
-        # str_data = "".join([*data.decode("utf-8")])
-        # split_str_data = str(str_data).split("&&")
-
-        # if not len(split_str_data) == 2:
-        #     LOGGER.warning('Split string data len not correct')
-
-        # data, count = self.online_data_handler.get_data(N=300)
-        # emg = data['emg']
-        # windows = get_windows(emg,300,75)
-        # features = self.feature_extractor.extract_features(feature_list = ['MAV', 'SSC', 'ZC', 'WL'],
-        #                                 windows = windows)
-
-        # # print("data: ", data)
-
-        # # print("Features: ", features)
-
-        # mavs = features['MAV']
-        # wls = features['WL']
-        # zcs = features['ZC']
-        # sscs = features['SSC']
-
-        # # Stack the features in the correct order and flatten
-        # feat_data = np.ravel(np.column_stack((mavs, wls, zcs, sscs)))
-        # # print("feat_data: ", feat_data)
-
-        # mean_mav = np.mean(features['MAV'])
-        # print("mean_mav: ", mean_mav)
-
-        # feat_str_data = split_str_data[0]
-        # mean_mav_str_data = split_str_data[1]
-
-        # split_feat_str_data = feat_str_data.split("$")
-        # feat_data = np.array([float(x) for x in split_feat_str_data])
-
-        # mean_mav = float(mean_mav_str_data)
-
         # don't predict if values too high or below floornoise
         if self.floornoise is not None:
             below_floornoise = self.floornoise > mean_mav
@@ -763,11 +701,6 @@ class ModelHandle:
             only_use_last_history (bool): If only last or all histories should be used.
                                             Defaults to False.
         """
-        # if self.play_with_emg:
-        #     self.stop_acqusition()
-        # else:
-        #     LOGGER.error("Cannot train model without EMG")
-        #     return
     
         if only_use_last_history:
             train_history_filenames = [history_filenames[-1]]
