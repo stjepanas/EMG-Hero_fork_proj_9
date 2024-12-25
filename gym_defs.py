@@ -43,9 +43,6 @@ def get_bioarmband_data(online_data_handler, feature_extractor):
                                                   windows = windows,
                                                   )
 
-    # print("data: ", data)
-    # print("Features: ", features)
-
     mavs = features['MAV'].flatten()
     wls = features['WL'].flatten()
     zcs = features['ZC'].flatten()
@@ -53,12 +50,6 @@ def get_bioarmband_data(online_data_handler, feature_extractor):
 
     # Stack the features in the correct order and flatten
     feat_data = np.ravel(np.column_stack((mavs, wls, zcs, sscs)))
-    # print("mavs:",mavs)
-    # print("wls:",wls)
-    # print("zcs:",zcs)
-    # print("sscs:",sscs)
-    # print("---------------------")
-    # print("feat_data", feat_data)
 
     mean_mav = np.mean(features['MAV'])
 

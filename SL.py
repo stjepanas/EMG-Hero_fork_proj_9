@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 import csv
 import matplotlib.pyplot as plt
 from emg_hero.model_utility import get_newest_directory
+from libemg import streamers
+from libemg.gui import GUI
+from libemg.data_handler import OnlineDataHandler 
 
 if __name__ == "__main__":
 
@@ -35,7 +38,7 @@ if __name__ == "__main__":
     dataset_folder = 'data'
     # gestures picked out for training, this is according to the gesture_list.json/collection.json
     gestures = ["0","1","2","3","4","5","6","7","8","9","10","11","12"]
-    reps = ["0","1","2","3","4","5"]
+    reps = ["0","1","2","3","4","5","6"]
     # filters out data files that don't contain gestures/reps/types of signals specified above
     regex_filters = [
     RegexFilter(left_bound = "C_", right_bound="_R", values = gestures, description='classes'),
@@ -48,8 +51,8 @@ if __name__ == "__main__":
     offline_dh.get_data(folder_location = dataset_folder, regex_filters=regex_filters, delimiter=",")
 
     # separates raw data into testing and training data
-    train_data = offline_dh.isolate_data("reps", [0]) # more data for training than for testing
-    test_data = offline_dh.isolate_data("reps", [4])
+    train_data = offline_dh.isolate_data("reps", [0,1,2,3,4,5]) # more data for training than for testing
+    test_data = offline_dh.isolate_data("reps", [6])
 
     # shapes data into windows x channels x nr of samples in a window, so nr_windows x 8 x 300
     # meta tells which movement is done for every window, gives a number from the gestures
@@ -67,7 +70,6 @@ if __name__ == "__main__":
 
     # returns everything that goes into the MDPDataset function
     observations_train,actions_train,rewards_train,terminals_train,pretrain_timeouts = get_training_dataset(gestures, feature_list, size_windows_train, training_features, train_meta)
-    
     observations_test,actions_test,rewards_test,terminals_test,pretest_timeouts = get_testing_dataset(gestures , feature_list, size_windows_test, testing_features, test_meta)
 
     # returns the MDPDatasets
@@ -83,14 +85,14 @@ if __name__ == "__main__":
     
     bc_model = model.fit(
       dataset_pretrain,
-      n_steps=1000,
-      n_steps_per_epoch=50,
+      n_steps=100000,
+      n_steps_per_epoch=500,
       evaluators={
           "f1_macro": f1_macro_evaluator,
      }
  )
 
-################### Testing and plotting the model results #################################
+################### Testing and plotting the model results #################################    
     observation = observations_test
     gt_actions = actions_test
     actions = np.zeros((np.shape(observation)[0],7))
@@ -111,14 +113,15 @@ if __name__ == "__main__":
     for idx, model in enumerate(model_names):
         bc_model = load_learnable(os.path.join(model_map, model))
         actions = bc_model.predict(observation)
-        actions = (actions >= 0.5).astype(int) # int under 0.5 = 0, int over 0.5 = 1
+        actions[actions < 0.5] = 0
+        actions[actions >= 0.5] = 1
         correct = 0
         incorrect = 0
         total = 0
         invalid = 0
         for i in range(observation.shape[0]):
             total += 1
-            if tuple(actions[i]) in reverse_mapping.keys():  # Check if valid action
+            if actions[i].tobytes() in reverse_mapping.keys():  # Check if valid action
                 if np.array_equal(actions[i], gt_actions[i]):
                     correct += 1
                 else:
@@ -136,23 +139,39 @@ if __name__ == "__main__":
     # for model names
     model_numbers = [i + 1 for i in range(np.shape(plot_stuff)[0])] 
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(model_numbers, correct, marker='o', label='Correct', color='green')
-    plt.plot(model_numbers, incorrect, marker='o', label='Incorrect', color='red')
-    plt.plot(model_numbers, invalid, marker='o', label='Invalid', color='orange')
-    plt.plot(model_numbers, loss, marker='o', label='Loss', color='blue')
+    # Create the figure and subplots
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(10, 6))
 
-    plt.xlabel("Models")
-    plt.ylabel("Count")
-    plt.title("Evaluation Metrics for Models")
-    plt.legend()
+    # Top plot with 3 signals
+    ax1.plot(model_numbers, correct, marker='o', label='Correct', color='green')
+    max_idx = np.argmax(correct)
+    ax1.text(model_numbers[max_idx], correct[max_idx], f'Max: {correct[max_idx]:.2f} - Model{max_idx}',
+         fontsize=12, color='green')
 
-    plt.tight_layout()  
+
+    ax1.plot(model_numbers, incorrect, marker='o', label='Incorrect', color='red')
+    ax1.plot(model_numbers, invalid, marker='o', label='Invalid', color='orange')
+    ax1.set_title('Prediction outcome')
+    ax1.legend()
+    ax1.grid()
+
+    # Bottom plot with 1 signal
+    ax2.plot(model_numbers, loss, label='Loss', color='blue')
+    min_idx = np.argmin(loss)
+    ax2.text(model_numbers[min_idx], loss[min_idx], f'Min: {loss[min_idx]:.2f} - Model{min_idx}',
+         fontsize=12, color='blue')
+    ax2.set_title('Training loss')
+    ax2.legend()
+    ax2.grid()
+
+    # Label the axes
+    ax2.set_xlabel('X-axis')
+    ax1.set_ylabel('Amplitude')
+    ax2.set_ylabel('Amplitude')
+
+    # Adjust layout
+    plt.tight_layout()
     plt.show()
-
-
-   
-
                      
 
                  

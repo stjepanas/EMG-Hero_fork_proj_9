@@ -34,9 +34,10 @@ def get_training_dataset(gestures: list, feature_list: list, size_windows_train,
     # Build dataset
     for i in range(nr_windows): 
         feature_train_vector = []
-        for feature in feature_list:
-            # Concatenate features from all channels
-            feature_train_vector.extend(training_features[feature][i])
+        for channel in range(8):
+            for feature in feature_list:
+                # Concatenate features from all channels
+                feature_train_vector.append(training_features[feature][i][channel])
   
         observations_train[i] = feature_train_vector
 
@@ -83,9 +84,10 @@ def get_testing_dataset(gestures:list , feature_list:list, size_windows_test, te
     for i in range(nr_windows): 
     # Extract features for the current window
         feature_test_vector = []
-        for feature in feature_list:
-            # Concatenate features from all channels
-            feature_test_vector.extend(testing_features[feature][i])
+        for channel in range(8):
+            for feature in feature_list:
+                # Concatenate features from all channels
+                feature_test_vector.append(testing_features[feature][i][channel])
 
         observations_test[i] = feature_test_vector
 
