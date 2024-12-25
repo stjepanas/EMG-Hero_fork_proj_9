@@ -107,6 +107,9 @@ Can be found in `gym_defs.py`
 ### Supervised learning
 Can be found in `SL.py`
 
+### Model test script
+There is a script to test the online predictions from the model without the game GUI in `model_test.py`
+
 
 ## Known issues
 - Selecting the retrain model inside the game references a `supervised_data.mat` that is currently not created.
