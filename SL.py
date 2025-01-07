@@ -76,19 +76,38 @@ if __name__ == "__main__":
     dataset_pretrain = MDPDataset(observations_train,actions_train,rewards_train,terminals_train,pretrain_timeouts,action_space = ActionSpace.CONTINUOUS)
     dataset_pretest = MDPDataset(observations_test,actions_test,rewards_test,terminals_test,pretest_timeouts,action_space = ActionSpace.CONTINUOUS)
     
+    import pickle
+
+    # save dataset_pretrain
+    with open('dataset_pretrain.pkl', 'wb') as f:
+        pickle.dump(dataset_pretrain, f)
+    # save dataset_pretest
+    with open('dataset_pretest.pkl', 'wb') as f:
+        pickle.dump(dataset_pretest, f)
+
 ################ Behaviour cloning ################################################################
     #takes the previous project's hyperparameters for the model
     base_config = BaseConfig()
     model, floornoise = build_algo(pt_weights=None, pt_biases=None, base_config=base_config)
 
     f1_macro_evaluator = F1MacroEvaluator(dataset_pretest.episodes)
+    f1_macro_evaluator_train = F1MacroEvaluator(dataset_pretrain.episodes)
+
+
+    from d3rlpy.metrics.evaluators import ContinuousActionDiffEvaluator
+
+    act_diff_train_evaluator = ContinuousActionDiffEvaluator(dataset_pretrain.episodes)
+    act_diff_test_evaluator = ContinuousActionDiffEvaluator(dataset_pretest.episodes)
     
     bc_model = model.fit(
       dataset_pretrain,
-      n_steps=100000,
+      n_steps=50000,
       n_steps_per_epoch=500,
       evaluators={
           "f1_macro": f1_macro_evaluator,
+          "f1_train": f1_macro_evaluator_train,
+          "loss_train": act_diff_train_evaluator,
+          "loss_test": act_diff_test_evaluator,
      }
  )
 

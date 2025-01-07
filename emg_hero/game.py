@@ -569,5 +569,5 @@ class EMGHero:
 
     def __del__(self):
         if self.canvas is not None:
-            self.save_history(backup=True)
+            # self.save_history(backup=True)
             self.song_mixer.stop()

@@ -380,7 +380,7 @@ def load_evaluators(supervised_test, dataset, emg_hero_metrics):
     # evaluators["train_reward"].load_data(train_observations, train_ideal_actions, n_episodes=(episode_idx+1))
 
     evaluators = {
-            "td_error": td_error_evaluator,
+            # "td_error": td_error_evaluator,
             "f1_macro": rl_f1_macro_evaluator,
             "emr": rl_emr_evaluator,
             "reward": emg_hero_metrics.simulate_song,
@@ -419,9 +419,15 @@ def train_emg_hero_model(
     Returns:
         _type_: trained model
     """
-    (supervised_train, supervised_test) = load_supervised_dataset(
-        supervised_filename, use_state_with_last_action=use_state_with_last_action
-    )
+    # (supervised_train, supervised_test) = load_supervised_dataset(
+    #     supervised_filename, use_state_with_last_action=use_state_with_last_action
+    # )
+
+    with open('dataset_pretrain.pkl', 'rb') as f:
+        supervised_train = pickle.load(f) 
+
+    with open('dataset_pretest.pkl', 'rb') as f:
+        supervised_test = pickle.load(f) 
 
     raw_history, terminal_inds = load_histories(history_filenames)
     (dataset, history, feature_size, action_size) = load_emg_hero_dataset(
@@ -746,8 +752,8 @@ class ModelHandle:
             "emg_hero_model_filenames_" + now + ".pkl"
         )
 
-        with open(model_filenames_save_path, "wb") as _file:
-            pickle.dump(self.model_filenames, _file)
-            LOGGER.info(
-                "Policy filenames successfully saved to %s", model_filenames_save_path
-            )
+        # with open(model_filenames_save_path, "wb") as _file:
+        #     pickle.dump(self.model_filenames, _file)
+        #     LOGGER.info(
+        #         "Policy filenames successfully saved to %s", model_filenames_save_path
+        #     )

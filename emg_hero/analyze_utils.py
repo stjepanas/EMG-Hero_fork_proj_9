@@ -171,7 +171,7 @@ def get_history_metrics(all_y_pred_raw, all_y_true_raw, ideal_labels, features, 
     metrics['emr_1_dof'], metrics['f1_1_dof'] = get_emr_and_f1_score(dof_1_y_true, dof_1_y_pred)
     dof_1_feats = features[inds_1_dof[:,0], :]
     dof_1_labels = ideal_labels[inds_1_dof[:,0]]
-    metrics['mi_1_dof'] = mutual_info_classif(dof_1_feats, dof_1_labels).mean()
+    # metrics['mi_1_dof'] = mutual_info_classif(dof_1_feats, dof_1_labels).mean()
 
     # 2 DOF
     dof_2_y_pred = all_y_true[inds_2_dof[:,0], :]
@@ -182,7 +182,7 @@ def get_history_metrics(all_y_pred_raw, all_y_true_raw, ideal_labels, features, 
     if inds_2_dof.shape[0] > 0:
         dof_2_feats = features[inds_2_dof[:,0], :]
         dof_2_labels = ideal_labels[inds_2_dof[:,0]]
-        metrics['mi_2_dof'] = mutual_info_classif(dof_2_feats, dof_2_labels).mean()
+        # metrics['mi_2_dof'] = mutual_info_classif(dof_2_feats, dof_2_labels).mean()
     else:
         metrics['mi_2_dof'] = np.nan
 
@@ -195,7 +195,7 @@ def get_history_metrics(all_y_pred_raw, all_y_true_raw, ideal_labels, features, 
     if inds_3_dof.shape[0] > 0:
         dof_3_feats = features[inds_3_dof[:,0], :]
         dof_3_labels = ideal_labels[inds_3_dof[:,0]]
-        metrics['mi_3_dof'] = mutual_info_classif(dof_3_feats, dof_3_labels).mean()
+        # metrics['mi_3_dof'] = mutual_info_classif(dof_3_feats, dof_3_labels).mean()
     else:
         metrics['mi_3_dof'] = np.nan
 
@@ -282,18 +282,18 @@ def create_csv(history_summary, base_folder='./', save_path=None, save_file=Fals
     #     motion_test_metrics[key] = get_motion_test_metrics(mt_onehot, mt_labels)
 
     # load supervised dataset
-    supervised_filename = experiment_folder / 'supervised_data.mat'
-    mat_data = loadmat(supervised_filename.as_posix(), squeeze_me = True)
+    # supervised_filename = experiment_folder / 'supervised_data.mat'
+    # mat_data = loadmat(supervised_filename.as_posix(), squeeze_me = True)
 
-    pretrain_train_observations = np.swapaxes(mat_data['person']['featsTrain'].take(0),
-                                                0, 1).astype(np.float64)
+    # pretrain_train_observations = np.swapaxes(mat_data['person']['featsTrain'].take(0),
+    #                                             0, 1).astype(np.float64)
 
     # pretrain_raw_data = mat_data['person']['rawData'].take(0).astype(np.float64)
     # pretrain_raw_labels = mat_data['person']['rawLabels'].take(0).astype(np.float64)
 
     signal_noise_ratio = np.nan #get_signal_noise_ratio(pretrain_raw_data, pretrain_raw_labels)
 
-    last_feature_dist = pretrain_train_observations
+    # last_feature_dist = pretrain_train_observations
 
     first_feature_dist = None
 
@@ -307,6 +307,9 @@ def create_csv(history_summary, base_folder='./', save_path=None, save_file=Fals
             file_history['actions'] = np.array(file_history['actions'])
             file_history['time'] = np.array(file_history['time'])
 
+        if len(file_history['actions']) == 0 :
+            continue    
+
         hist_rewards = np.array(file_history['rewards'])
         reward_sum = hist_rewards.sum()
         positive_reward_sum = hist_rewards[hist_rewards>0.].sum()
@@ -315,6 +318,8 @@ def create_csv(history_summary, base_folder='./', save_path=None, save_file=Fals
         ideal_actions = get_reachable_notes(file_history, label_transformer, switch_lines=history_summary['switch_lines'])
         features = np.array(file_history['features'])
         ideal_labels = actions_to_labels(ideal_actions)
+        print("actions:",actions)
+        print("ideal_actions:",ideal_actions)
         rl_metrics = get_history_metrics(actions, ideal_actions, ideal_labels, features, move_config)
 
         max_reward = get_rewards(ideal_actions, ideal_actions).sum()
@@ -334,9 +339,9 @@ def create_csv(history_summary, base_folder='./', save_path=None, save_file=Fals
         results_row['min_reward'] = min_reward
         results_row['sim_reward'] = sim_reward
 
-        results_row['entropy_supervised'] = get_feature_entropy(pretrain_train_observations, file_history['features'])
-        results_row['entropy_last_episode'] = get_feature_entropy(last_feature_dist, file_history['features'])
-        results_row['entropy_last_episode_2'] = get_feature_entropy(file_history['features'], last_feature_dist)
+        # results_row['entropy_supervised'] = get_feature_entropy(pretrain_train_observations, file_history['features'])
+        # results_row['entropy_last_episode'] = get_feature_entropy(last_feature_dist, file_history['features'])
+        # results_row['entropy_last_episode_2'] = get_feature_entropy(file_history['features'], last_feature_dist)
         if first_feature_dist is None:
             first_feature_dist = file_history['features']
             results_row['entropy_first_episode'] = get_feature_entropy(first_feature_dist, first_feature_dist)

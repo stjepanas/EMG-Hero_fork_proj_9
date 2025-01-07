@@ -174,7 +174,7 @@ class EMGHeroEnv(gym.Env):
 
                 # get pressed keys
                 if self.PLAY_WITH_EMG:
-                    one_hot_preds = action
+                    # one_hot_preds = action
                     self.last_data_extract = time.time()
                 else:
                     self.new_features = True

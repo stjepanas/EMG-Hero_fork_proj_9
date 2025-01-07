@@ -109,11 +109,11 @@ class AlgoConfig(BaseModel):
 
     # general algo params
     n_steps: int = 2_200
-    actor_hidden_size: int = 64
-    actor_n_layers: int = 6
+    actor_hidden_size: int = 256
+    actor_n_layers: int = 3
     actor_dropout: float = 0.0159
     critic_hidden_size: int = 128
-    critic_n_layers: int = 12
+    critic_n_layers: int = 6
     critic_dropout: float = 0.338
     actor_learning_rate: float = 0.00034
     critic_learning_rate: float = 0.000873
