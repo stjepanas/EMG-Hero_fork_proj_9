@@ -63,6 +63,8 @@ You can generate notes to any song you want, you only need a *.wav file. Change 
 ## Parameters
 TODO
 
+# Project implementation
+
 ## Supervised learning 
 Everything necessary to build the training and testing datasets is in the SL and create_datasets scripts.
 SL script does the data gathering, separates it into the training and testing, extracts features and makes the MDPDatasets with functions from create_datasets.
@@ -85,3 +87,31 @@ python3 gym_main.py --experiment_folder ./logs/TEST_FOLDER_NAME_HERE/ --model d3
 | --experiment_folder  | Specifies there logs are saved |
 | --model              | OPTIONAL: Specifies model used |
 | --no_emg             | OPTIONAL: Uses keyboard inputs instead of EMG signals |
+
+Logs will be save the the folder specified in the `--experiment` argument.
+
+## Code Structure
+
+### Game Initilization
+Is split between the `gym_env.__init__()` and the beginning of `gym_main.py`
+
+### Game step logic
+Can be found in `gym_env.step()`
+
+### Graphical interface logic
+Updating the pygame canvas is done in `gym_env.render()`
+
+### Helper functions 
+Can be found in `gym_defs.py`
+
+### Supervised learning
+Can be found in `SL.py`
+
+### Model test script
+There is a script to test the online predictions from the model without the game GUI in `model_test.py`
+
+
+## Known issues
+- Selecting the retrain model inside the game references a `supervised_data.mat` that is currently not created.
+- Using the already available retrain scripts does not work since we do not have a `supervised_data.mat` file.
+
